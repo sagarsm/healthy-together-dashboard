@@ -1,0 +1,177 @@
+:root {
+  --bg: #f4f6f5;
+  --panel: #ffffff;
+  --text: #1c2422;
+  --muted: #6b7570;
+  --accent: #1f9d6f;
+  --accent-dark: #157a56;
+  --border: #e2e6e4;
+  --up: #1f9d6f;
+  --down: #d0483e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121614;
+    --panel: #1b211e;
+    --text: #eef2f0;
+    --muted: #9aa39e;
+    --border: #2a322e;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.topbar {
+  padding: 2rem 1.5rem 1rem;
+  text-align: center;
+}
+.topbar h1 { margin: 0; font-size: 1.8rem; }
+.tagline { color: var(--muted); margin: 0.25rem 0 0; }
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1.5rem 3rem;
+}
+
+.hidden { display: none !important; }
+.muted { color: var(--muted); font-size: 0.9rem; }
+
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 2rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  background: var(--panel);
+  transition: border-color 0.15s;
+}
+.drop-zone.drag { border-color: var(--accent); }
+.drop-zone p { margin: 0.3rem 0; }
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--accent-dark);
+  cursor: pointer;
+  padding: 0.4rem 0;
+  font-size: 0.9rem;
+  text-decoration: underline;
+}
+
+.help-box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+.help-box pre {
+  background: var(--bg);
+  padding: 0.6rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+section { margin-top: 2rem; }
+h2 { font-size: 1.15rem; margin-bottom: 0.75rem; }
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+select, button, input[type="file"] {
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+}
+
+button { cursor: pointer; }
+button.danger { color: var(--down); border-color: var(--down); }
+button#exportJsonBtn, button.danger { margin-right: 0.5rem; }
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+}
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.9rem;
+  text-align: center;
+}
+.card-value { font-size: 1.4rem; font-weight: 700; }
+.card-label { color: var(--muted); font-size: 0.8rem; margin-top: 0.2rem; }
+
+.table-wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; min-width: 560px; }
+th, td { text-align: left; padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+th { color: var(--muted); font-weight: 600; }
+tr:last-child td { border-bottom: none; }
+
+.personal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.personal-header h3 { margin: 0; }
+.badges { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.badge {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.8rem;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+.metric-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.9rem;
+}
+.metric-title { font-size: 0.85rem; color: var(--muted); }
+.metric-value { font-size: 1.3rem; font-weight: 700; margin-top: 0.15rem; }
+.metric-sub { color: var(--muted); font-size: 0.8rem; margin-top: 0.3rem; }
+.up { color: var(--up); font-size: 0.85rem; }
+.down { color: var(--down); font-size: 0.85rem; }
+
+.sparkline { width: 100%; height: 36px; margin-top: 0.5rem; }
+.sparkline polyline { fill: none; stroke: var(--accent); stroke-width: 2; }
+
+.unparsed-row {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.data-section { display: flex; gap: 0.5rem; }

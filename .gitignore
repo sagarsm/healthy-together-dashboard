@@ -1,0 +1,7 @@
+.DS_Store
+
+# Real WhatsApp export — contains raw chat text (personal/medical content) and
+# member photos/videos. Never commit this; the app only ever ships the
+# scrubbed, no-text-content real-data.js derived from it. Regenerate that
+# file locally from a fresh export when you want to update it.
+WhatsApp_Walchandites Healthy Together\ /

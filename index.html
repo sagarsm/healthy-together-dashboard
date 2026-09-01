@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Healthy Together — Group Progress Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>💪 Healthy Together</h1>
+    <p class="tagline">Beat your best — not the leaderboard.</p>
+  </header>
+
+  <main class="container">
+    <section class="upload-section">
+      <div id="dropZone" class="drop-zone">
+        <p><strong>Drop your WhatsApp export here</strong> or click to choose a file</p>
+        <p class="muted">Open the group in WhatsApp → ⋮ → More → Export chat → <strong>Include media</strong> →
+          you'll get a .zip; unzip it and drop the <code>_chat.txt</code> here. ("Without media" is smaller but
+          can strip captions on some WhatsApp versions — since captions are how this reads screenshot posts,
+          include media to be safe. The photos/videos themselves aren't used or uploaded anywhere.)</p>
+        <input id="fileInput" type="file" accept=".txt" hidden />
+      </div>
+      <p id="uploadStatus" class="muted"></p>
+      <button id="helpToggle" class="link-btn">What message format should we use?</button>
+      <div id="helpBox" class="help-box hidden">
+        <p>Post progress as one WhatsApp message per day, covering Cardio (walk/run/cycle/hike — any
+          activity), Strength (weights/calisthenics), Mobility (yoga/pilates) and Sleep:</p>
+        <pre>Sagar : Cardio : 7000 Steps | Strength : 45 min | Mobility : 30 min | Sleep : 7.5 Hours</pre>
+        <p class="muted">Keep doing exactly what you already do — screenshot your fitness app — and just
+          paste this line as the <strong>caption</strong> on the screenshot instead of sending it bare. The
+          caption comes through in the export text, so it parses the same either way. Order, spacing, and
+          units like "Steps"/"min"/"Hours" don't matter — the parser just looks for each word followed by a
+          number, wherever it appears. A screenshot with no caption (or text that doesn't match) shows up
+          under "Needs a nudge" below so you can see who to remind. Nothing is sent anywhere — the file is
+          parsed in your browser and stored only in this browser (localStorage).</p>
+      </div>
+    </section>
+
+    <section id="dashboard" class="hidden">
+      <section class="group-section">
+        <h2>🏆 Group</h2>
+        <div id="groupCards" class="card-grid"></div>
+      </section>
+
+      <section class="leaderboard-section">
+        <div class="section-head">
+          <h2>🔥 Leaderboard</h2>
+          <select id="leaderboardMode">
+            <option value="consistency">Sort by consistency (streak)</option>
+            <option value="improvement">Sort by improvement</option>
+            <option value="raw">Sort by latest steps</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>Member</th><th>Cardio</th><th>Strength</th><th>Mobility</th><th>Sleep</th><th>Streak</th></tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="personal-section">
+        <div class="section-head">
+          <h2>📈 Personal progress</h2>
+          <select id="memberSelect"></select>
+        </div>
+        <div id="personalPanel"></div>
+      </section>
+
+      <section id="unparsedPanel" class="unparsed-section hidden">
+        <h2>👀 Needs a nudge</h2>
+        <p class="muted">These messages didn't match the progress format — probably a screenshot or free-form text.</p>
+        <div id="unparsedList"></div>
+      </section>
+
+      <section class="data-section">
+        <button id="exportJsonBtn">Export backup (JSON)</button>
+        <button id="clearDataBtn" class="danger">Clear all data</button>
+      </section>
+    </section>
+  </main>
+
+  <script src="real-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
