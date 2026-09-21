@@ -5,6 +5,7 @@
 
 const STORAGE_KEY = 'healthy-together:entries:v2'; // v2 = Cardio/Strength/Mobility schema
 const UNPARSED_KEY = 'healthy-together:unparsed:v1'; // persisted so "Needs a nudge" survives a reload
+const SEED_LABEL_KEY = 'healthy-together:seedLabel:v1'; // tracks which baked-in real-data.js a browser has already applied
 
 // ---------- WhatsApp export parsing ----------
 
@@ -570,6 +571,7 @@ function init() {
     if (confirm('Clear all imported data from this browser? This cannot be undone.')) {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(UNPARSED_KEY);
+      localStorage.removeItem(SEED_LABEL_KEY);
       renderAll([], []);
       els.uploadStatus.textContent = 'Data cleared. Drop a WhatsApp export above to reload it.';
     }
@@ -587,18 +589,25 @@ function init() {
 
   els.helpToggle.addEventListener('click', () => els.helpBox.classList.toggle('hidden'));
 
-  // First-ever load (nothing in localStorage yet): seed the dashboard with
-  // the real data already parsed from the group's WhatsApp export, so it's
-  // never showing dummy data or an empty screen. real-data.js (loaded
-  // before this file) defines SEED_ENTRIES/SEED_UNPARSED/SEED_LABEL when
-  // present. Any later upload just merges on top of this, same as always.
+  // Seed (or re-seed) with the real data already parsed from the group's
+  // WhatsApp export, so the dashboard never shows dummy or stale data.
+  // real-data.js (loaded before this file) defines
+  // SEED_ENTRIES/SEED_UNPARSED/SEED_LABEL when present. This runs not just
+  // on a completely empty browser, but any time SEED_LABEL has changed
+  // since this browser last applied a seed — otherwise a returning visitor
+  // would be stuck on whatever real-data.js looked like the very first time
+  // they opened the page, even after we ship a freshly re-parsed export.
+  // Merging (not replacing) preserves anything the visitor uploaded locally
+  // that isn't in the baked-in seed.
   let entries = loadStoredEntries();
   let unparsed = loadStoredUnparsed();
-  if (entries.length === 0 && unparsed.length === 0 && typeof SEED_ENTRIES !== 'undefined') {
-    entries = mergeEntries([], SEED_ENTRIES);
+  const appliedSeedLabel = localStorage.getItem(SEED_LABEL_KEY);
+  if (typeof SEED_ENTRIES !== 'undefined' && appliedSeedLabel !== SEED_LABEL) {
+    entries = mergeEntries(entries, SEED_ENTRIES);
     unparsed = SEED_UNPARSED || [];
     saveEntries(entries);
     saveUnparsed(unparsed);
+    if (typeof SEED_LABEL !== 'undefined') localStorage.setItem(SEED_LABEL_KEY, SEED_LABEL);
     els.uploadStatus.textContent = `Loaded ${entries.length} real logged entr${entries.length === 1 ? 'y' : 'ies'} from the group's WhatsApp export${typeof SEED_LABEL !== 'undefined' ? ` (${SEED_LABEL})` : ''}. Drop a newer export above to update it.`;
   }
   renderAll(entries, unparsed);
