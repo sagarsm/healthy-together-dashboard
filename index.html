@@ -39,6 +39,19 @@
     </section>
 
     <section id="dashboard" class="hidden">
+      <section class="highlights-section">
+        <div class="highlight-col">
+          <h2>🌟 Most consistent</h2>
+          <p class="muted">Ranked by current daily streak.</p>
+          <div id="mostConsistentList" class="highlight-list"></div>
+        </div>
+        <div class="highlight-col">
+          <h2>😴 Needs a nudge</h2>
+          <p class="muted">Longest gap since they posted anything at all — ping these folks first.</p>
+          <div id="needsNudgeList" class="highlight-list"></div>
+        </div>
+      </section>
+
       <section class="group-section">
         <h2>🏆 Group</h2>
         <div id="groupCards" class="card-grid"></div>
@@ -72,8 +85,8 @@
       </section>
 
       <section id="unparsedPanel" class="unparsed-section hidden">
-        <h2>👀 Needs a nudge</h2>
-        <p class="muted">These messages didn't match the progress format — probably a screenshot or free-form text.</p>
+        <h2>📋 Posted, but not in format</h2>
+        <p class="muted">These messages didn't match the progress format — probably a screenshot or free-form text. They still count as activity, just not as logged metrics.</p>
         <div id="unparsedList"></div>
       </section>
 

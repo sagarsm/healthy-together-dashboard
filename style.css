@@ -175,3 +175,27 @@ tr:last-child td { border-bottom: none; }
 }
 
 .data-section { display: flex; gap: 0.5rem; }
+
+.highlights-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.highlight-col h2 { margin-bottom: 0.2rem; }
+.highlight-col .muted { margin-top: 0; margin-bottom: 0.6rem; }
+.highlight-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.highlight-row {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.55rem 0.8rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+}
+.highlight-rank { color: var(--muted); font-size: 0.8rem; min-width: 1.2em; }
+.highlight-row.urgent { border-color: var(--down); }
+.highlight-row.urgent .muted { color: var(--down); }

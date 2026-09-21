@@ -306,14 +306,25 @@ function nextTarget(metric, best) {
   return Math.round(best + METRIC_META[metric].bump);
 }
 
+// Last date this person posted anything at all — a logged entry or an
+// off-format message (screenshot, chat). Used for the "needs a nudge"
+// highlight, which is about who's gone quiet, not just whose format slipped.
+function lastActivityDate(sender, allEntries, unparsed) {
+  const dates = [
+    ...allEntries.filter(e => e.sender === sender).map(e => e.date),
+    ...unparsed.filter(u => u.sender === sender).map(u => u.date),
+  ];
+  return dates.length ? dates.sort().at(-1) : null;
+}
+
 // ---------- Rendering ----------
 
 const els = {};
 
 function cacheEls() {
-  ['fileInput', 'dropZone', 'uploadStatus', 'dashboard', 'groupCards', 'leaderboardBody',
-   'leaderboardMode', 'memberSelect', 'personalPanel', 'unparsedPanel', 'unparsedList',
-   'clearDataBtn', 'exportJsonBtn', 'helpToggle', 'helpBox'].forEach(id => {
+  ['fileInput', 'dropZone', 'uploadStatus', 'dashboard', 'mostConsistentList', 'needsNudgeList',
+   'groupCards', 'leaderboardBody', 'leaderboardMode', 'memberSelect', 'personalPanel',
+   'unparsedPanel', 'unparsedList', 'clearDataBtn', 'exportJsonBtn', 'helpToggle', 'helpBox'].forEach(id => {
     els[id] = document.getElementById(id);
   });
 }
@@ -327,10 +338,56 @@ function renderAll(allEntries, unparsed) {
   const members = Array.from(new Set([...allEntries.map(e => e.sender), ...unparsed.map(u => u.sender)])).sort();
   els.dashboard.classList.toggle('hidden', members.length === 0);
 
+  renderHighlights(allEntries, unparsed, members);
   renderGroupCards(allEntries, members);
   renderLeaderboard(allEntries, members);
   renderMemberSelect(members);
   renderUnparsed(unparsed);
+}
+
+// The first thing anyone should see: who's on a roll, and who's gone quiet
+// long enough that a nudge would help. Deliberately above the group stats
+// and leaderboard.
+function renderHighlights(allEntries, unparsed, members) {
+  const today = todayIso();
+
+  const consistent = members
+    .map(m => analyzeMember(m, allEntries))
+    .filter(r => r.entries.length > 0)
+    .sort((a, b) => b.streak - a.streak || b.consistencyPct - a.consistencyPct)
+    .slice(0, 5);
+
+  els.mostConsistentList.innerHTML = consistent.length
+    ? consistent.map((r, i) => `
+      <div class="highlight-row">
+        <span class="highlight-rank">${i + 1}</span>
+        <strong>${escapeHtml(r.sender)}</strong>
+        <span class="muted">🔥 ${r.streak}-day streak · ${Math.round(r.consistencyPct)}% consistent</span>
+      </div>
+    `).join('')
+    : `<p class="muted">No logged entries yet.</p>`;
+
+  // Ranked by days since the last post of ANY kind — logged entry or
+  // off-format message — so someone who's fully gone quiet outranks someone
+  // whose recent posts just missed the format.
+  const gaps = members
+    .map(sender => {
+      const last = lastActivityDate(sender, allEntries, unparsed);
+      return { sender, daysSince: last ? daysBetween(last, today) : null };
+    })
+    .sort((a, b) => (b.daysSince ?? -1) - (a.daysSince ?? -1))
+    .slice(0, 5);
+
+  els.needsNudgeList.innerHTML = gaps.map(g => `
+    <div class="highlight-row ${g.daysSince == null || g.daysSince >= 3 ? 'urgent' : ''}">
+      <strong>${escapeHtml(g.sender)}</strong>
+      <span class="muted">${
+        g.daysSince == null ? 'No activity yet'
+        : g.daysSince === 0 ? 'Posted today'
+        : `Last posted ${g.daysSince} day${g.daysSince === 1 ? '' : 's'} ago`
+      }</span>
+    </div>
+  `).join('');
 }
 
 function renderGroupCards(allEntries, members) {

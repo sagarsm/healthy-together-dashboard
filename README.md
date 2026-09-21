@@ -67,8 +67,8 @@ Strength: 40 min | Cardio 6,500 | Sleep 7:30 | Mobility - 15min
 A message can include just some of the four sections (e.g. rest day, no
 mobility that day) — whatever's missing simply shows as "—" for that entry.
 A screenshot posted with no caption (or caption text that doesn't match)
-shows up in the **"Needs a nudge"** section so an admin can see who isn't
-following the format yet.
+shows up in the **"Posted, but not in format"** section so an admin can see
+who isn't following the format yet.
 
 Recognized fields, each independent and optional per message:
 | Section  | Unit  | Keyword matched     | Also understood                 |
@@ -80,6 +80,13 @@ Recognized fields, each independent and optional per message:
 
 ## What the dashboard shows
 
+- **Highlights (top of page)** — the first thing anyone sees:
+  - **🌟 Most consistent** — top 5 by current daily streak (ties broken by
+    overall consistency %), among members with at least one logged entry.
+  - **😴 Needs a nudge** — top 5 by days since their *last post of any kind*
+    (a logged entry or an off-format message) — this catches someone who's
+    gone fully quiet, not just someone whose format slipped. A gap of 3+
+    days is flagged in red.
 - **Group** — participants, active-this-week, weekly averages per section, and
   what share of this week's messages logged all four sections.
 - **Leaderboard** — sortable by *consistency (streak)*, *improvement*, or raw
@@ -92,25 +99,30 @@ Recognized fields, each independent and optional per message:
   their own earliest week, personal best, a suggested next target, and a
   sparkline. This is the "beat your best" framing from the plan, not just a
   rank number.
-- **Needs a nudge** — how many of each member's messages didn't parse (no
-  section matched at all — a bare screenshot, an off-format caption, or
-  free-form chat). Shows counts only, never the message text.
+- **Posted, but not in format** — how many of each member's messages didn't
+  parse (no section matched at all — a bare screenshot, an off-format
+  caption, or free-form chat). Shows counts only, never the message text.
+  This is different from the "Needs a nudge" highlight above, which is about
+  total silence, not just format mismatches.
 
 ## Real data baseline
 
 The dashboard ships pre-loaded with the group's actual WhatsApp export
-(`WhatsApp_Walchandites Healthy Together/_chat.txt`, 2026-08-18 to 2026-09-01),
+(`WhatsApp_Walchandites Healthy Together/_chat.txt`, 2026-08-18 to 2026-09-21),
 parsed into `real-data.js`. Opening the page with an empty browser shows this
 real data immediately — no upload needed, and nothing fabricated. Dropping a
 newer export on the page merges on top of it and takes over from there, same
 as always.
 
-As of that export: **9 real logged entries from 5 of the 17 group members**
-(Sagar, Anand Kulkarni, Abhijeet Khobare, Kuldeep Walujkar, Ranje Savardekar).
-The other 12 members have posted plenty in the chat — screenshots, "did X
-today" messages — just not yet in the Cardio/Strength/Mobility/Sleep format,
-so they show up with "—" everywhere rather than being fabricated or hidden.
-That's the real state of Phase 2 adoption, not a bug.
+As of that export: **66 real logged entries from 8 of the 19 group members**
+(Amol Pednekar, Anand Kulkarni, Sagar Mehendale, Kuldeep Walujkar, Ranje
+Savardekar, Abhijeet Khobare, Chaita Khadilkar, Avinash Patil) — up from 9
+entries / 5 members as of the first Sep 1 export, so Phase 2 adoption is
+slowly growing. The other 11 members have posted plenty in the chat —
+screenshots, "did X today" messages — just not yet in the
+Cardio/Strength/Mobility/Sleep format, so they show up with "—" everywhere
+rather than being fabricated or hidden. That's the real state of Phase 2
+adoption, not a bug.
 
 A few real-world parsing wrinkles found and handled while building this
 baseline (see `app.js` comments for the actual regexes):
