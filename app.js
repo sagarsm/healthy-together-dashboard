@@ -65,13 +65,88 @@ function parseWhatsAppExport(rawText) {
   }
   if (current) messages.push(current);
 
-  return messages.filter(m => !SYSTEM_LINE.test(m.text));
+  // Several members backfill a previous day's numbers in a message sent
+  // today (posting "yesterday" and "today" back to back, or writing an
+  // explicit date like "20th Sept" / "31/8/26" into the text) — see
+  // extractExplicitDate. Override the WhatsApp send-date with whatever date
+  // the message itself claims, so those entries land on the right day
+  // instead of colliding with (and overwriting) that same day's other post.
+  const dated = messages.map(m => {
+    const explicit = extractExplicitDate(m.text, m.date);
+    return explicit && explicit !== m.date ? { ...m, date: explicit } : m;
+  });
+
+  return dated.filter(m => !SYSTEM_LINE.test(m.text));
 }
 
 function isoDate(year, month, day) {
   const mm = String(month).padStart(2, '0');
   const dd = String(day).padStart(2, '0');
   return `${year}-${mm}-${dd}`;
+}
+
+function isoDateFromUTC(d) {
+  return isoDate(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
+}
+
+const MONTH_NAMES = {
+  jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3, apr: 4, april: 4,
+  may: 5, jun: 6, june: 6, jul: 7, july: 7, aug: 8, august: 8,
+  sep: 9, sept: 9, september: 9, oct: 10, october: 10, nov: 11, november: 11, dec: 12, december: 12,
+};
+
+// A message sent on one calendar day can be reporting a different day's
+// numbers — "Yesterday Sagar 10556 steps", "(20 Sep) Cardio ...", or a plain
+// "31/8/26 ...". Returns an ISO date to use INSTEAD of the WhatsApp send
+// date, or null if the text doesn't name a day (the common case — most
+// messages are about "today" and should just keep their send date).
+function extractExplicitDate(text, sendDateIso) {
+  const sendDate = new Date(`${sendDateIso}T00:00:00Z`);
+
+  // "Yesterday", optionally parenthesized, at the start of the message —
+  // anchored so casual mid-sentence mentions ("...did yesterday's workout
+  // again") don't get misread as a date correction.
+  if (/^\(?yesterday\)?\b/i.test(text.trim())) {
+    const d = new Date(sendDate);
+    d.setUTCDate(d.getUTCDate() - 1);
+    return isoDateFromUTC(d);
+  }
+
+  // Day + month name, e.g. "20th Sept", "(27 Aug)", "20 Sep" — only near the
+  // start of the message (allowing for a leading name/colon/paren), which is
+  // where every real backfill in this chat puts it. Without that limit this
+  // also matches a casual date mention buried in a sentence — e.g. "Will
+  // record next check on 25th Aug" or "What's the count for 18th nov?" —
+  // which would wrongly misdate a message that isn't reporting a past day
+  // at all.
+  const named = /\b(\d{1,2})(?:st|nd|rd|th)?\s+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sept?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i.exec(text);
+  if (named && named.index <= 20) {
+    const day = parseInt(named[1], 10);
+    const month = MONTH_NAMES[named[2].toLowerCase()];
+    if (day >= 1 && day <= 31) {
+      let year = sendDate.getUTCFullYear();
+      let candidate = new Date(Date.UTC(year, month - 1, day));
+      // A named date can't be in the future relative to when it was sent —
+      // if it looks that way, the reference must be to last year.
+      if (candidate > sendDate) candidate = new Date(Date.UTC(year - 1, month - 1, day));
+      return isoDateFromUTC(candidate);
+    }
+  }
+
+  // Plain numeric DD/MM/YY(YY), e.g. "31/8/26 Kuldeep cardio 17000" or
+  // "Ranjeet Cardio : 02/09/2026 : 9148 Steps" — same near-the-start limit.
+  const numeric = /\b(\d{1,2})\/(\d{1,2})\/(\d{2,4})\b/.exec(text);
+  if (numeric && numeric.index <= 20) {
+    const day = parseInt(numeric[1], 10);
+    const month = parseInt(numeric[2], 10);
+    let year = parseInt(numeric[3], 10);
+    if (year < 100) year += 2000;
+    if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+      return isoDate(year, month, day);
+    }
+  }
+
+  return null;
 }
 
 // ---------- Metric extraction ----------
@@ -93,27 +168,33 @@ const NOT_A_DURATION = /^\s*[-–]?\s*\d*\s*(days?|weeks?)\b/i;
 // Excluded from metric extraction so they don't get counted as data.
 const INSTRUCTIONAL_LINE = /\be\.g\.?\b|\bexample\b|standard format|mandatory (follow|track)|made up numbers|to report (you|your) progress/i;
 
+// Some backfilled messages label the day right inside the value, e.g.
+// "Cardio : 02/09/2026 : 9148 Steps" — without this, the extractors below
+// would grab the date's own "02" as the step count instead of the real
+// 9148 further along. Spliced into each extractor to skip past it.
+const DATE_LABEL = '(?:\\d{1,2}\\/\\d{1,2}\\/\\d{2,4}\\s*:?\\s*)?';
+
 const EXTRACTORS = {
   cardioSteps: text => {
-    const m = /cardio\s*:?\s*([\d,]{2,7})/i.exec(text);
+    const m = new RegExp(`cardio\\s*:?\\s*${DATE_LABEL}([\\d,]{2,7})`, 'i').exec(text);
     return m ? parseInt(m[1].replace(/,/g, ''), 10) : null;
   },
   strengthMinutes: text => {
-    const m = /strength\s*:?\s*(\d{1,3})(.{0,20})/i.exec(text);
+    const m = new RegExp(`strength\\s*:?\\s*${DATE_LABEL}(\\d{1,3})(.{0,20})`, 'i').exec(text);
     if (!m || NOT_A_DURATION.test(m[2])) return null;
     return parseInt(m[1], 10);
   },
   mobilityMinutes: text => {
-    const m = /mobility\s*:?\s*(\d{1,3})(.{0,20})/i.exec(text);
+    const m = new RegExp(`mobility\\s*:?\\s*${DATE_LABEL}(\\d{1,3})(.{0,20})`, 'i').exec(text);
     if (!m || NOT_A_DURATION.test(m[2])) return null;
     return parseInt(m[1], 10);
   },
   sleepHours: text => {
     // "7h30m" / "7:30" style (hours + minutes) takes priority over...
-    let m = /sleep\s*:?\s*(\d{1,2})\s*[:h]\s*(\d{1,2})\s*m?\b/i.exec(text);
+    let m = new RegExp(`sleep\\s*:?\\s*${DATE_LABEL}(\\d{1,2})\\s*[:h]\\s*(\\d{1,2})\\s*m?\\b`, 'i').exec(text);
     if (m) return parseInt(m[1], 10) + parseInt(m[2], 10) / 60;
     // ...plain/decimal hours: "7.5 Hours", "7 hrs", "8"
-    m = /sleep\s*:?\s*(\d{1,2}(?:\.\d{1,2})?)\s*(?:h(?:rs?|ours?)?)?\b/i.exec(text);
+    m = new RegExp(`sleep\\s*:?\\s*${DATE_LABEL}(\\d{1,2}(?:\\.\\d{1,2})?)\\s*(?:h(?:rs?|ours?)?)?\\b`, 'i').exec(text);
     return m ? parseFloat(m[1]) : null;
   },
 };
@@ -138,7 +219,13 @@ function extractMetrics(text) {
 }
 
 // Turn raw WhatsApp messages into dated per-member entries.
-// One entry per (sender, date) — if someone posts twice in a day, later message wins.
+// One entry per (sender, date) — messages are MERGED field-by-field rather
+// than overwritten, since it's common for someone to split one day's
+// sections across two messages (e.g. cardio in one, mobility in another),
+// or to post a same-day backfill for a different date (see
+// extractExplicitDate, which is what gives those a different `date` here
+// in the first place). Where the same field is reported twice for the same
+// day, the later message wins — same as always for a genuine correction.
 function buildEntries(messages) {
   const entries = new Map(); // key `${sender}|${date}` -> entry
   const unparsed = [];
@@ -153,11 +240,13 @@ function buildEntries(messages) {
       continue;
     }
     const key = `${msg.sender}|${msg.date}`;
+    const existing = entries.get(key);
     entries.set(key, {
       sender: msg.sender,
       date: msg.date,
+      ...(existing || {}),
       ...metrics,
-      rawText: msg.text,
+      rawText: existing ? `${existing.rawText}\n${msg.text}` : msg.text,
     });
   }
   return { entries: Array.from(entries.values()), unparsed };

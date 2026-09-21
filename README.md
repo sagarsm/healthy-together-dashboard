@@ -138,10 +138,20 @@ baseline (see `app.js` comments for the actual regexes):
 - **"Strength 2-3 days/week"** (a plan/goal post) no longer gets misread as a
   2-minute strength entry — a duration keyword followed by "day(s)"/"week(s)"
   is rejected.
-- Several people post a manually-typed date in the message itself ("Anand (27
-  Aug)", "31/8/26 Kuldeep...") that doesn't match the day they actually sent
-  it. The dashboard uses the *send* date, not the typed one — worth a look if
-  a "latest" number ever seems to lag by a day.
+- **Backfilled/typed dates are now respected.** Several people post a
+  different day's numbers than the day they actually sent the message —
+  "Anand (27 Aug)", "31/8/26 Kuldeep...", "Sagar 20th Sept ..." sent the
+  next evening, or just "Yesterday ...". `extractExplicitDate` in `app.js`
+  picks up a day/month reference (name or DD/MM/YY) or a "Yesterday" marker
+  *near the start of the message* and uses that instead of the WhatsApp send
+  date, so a backfilled entry lands on the right day instead of overwriting
+  (and losing) whatever else was logged for the send date. Same-day messages
+  for one date are merged field-by-field rather than the later one replacing
+  the earlier one outright. One known limitation: a single message that
+  backfills *two different* days at once (Ranje's
+  `"31/08/2026 : 9003 Steps\n01/09/2026 : 3383"` style) only keeps the first
+  date's number — splitting one message into multiple dated entries isn't
+  implemented.
 - The "Needs a nudge" panel intentionally shows **counts only, never message
   text** — real group chat mixes in things like blood test results and body
   measurements that shouldn't be echoed onto a dashboard other members can see.
